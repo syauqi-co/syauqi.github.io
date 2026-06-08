@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pink Flower Bucket</title>
+
+<style>
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+}
+
+canvas{
+    display:block;
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+let w,h;
+
+function resize(){
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize",resize);
+
+const stars = [];
+
+for(let i=0;i<180;i++){
+    stars.push({
+        x:Math.random()*window.innerWidth,
+        y:Math.random()*window.innerHeight,
+        r:Math.random()*2
+    });
+}
+
+const fireflies=[];
+
+for(let i=0;i<40;i++){
+
+    fireflies.push({
+        x:Math.random()*window.innerWidth,
+        y:Math.random()*window.innerHeight,
+        r:2+Math.random()*3,
+        speed:0.2+Math.random()*0.8,
+        phase:Math.random()*100
+    });
+
+}
+
+class Flower{
+
+    constructor(x){
+
+        this.x=x;
+        this.baseY=h-100;
+
+        this.height=0;
+
+        this.maxHeight=
+        180+
+        Math.random()*120;
+
+        this.growSpeed=
+        0.8+
+        Math.random()*1.2;
+
+        this.bloom=0;
+
+        this.leaves=[];
+
+        for(let i=0;i<6;i++){
+
+            this.leaves.push({
+                y:40+i*25,
+                size:0
+            });
+
+        }
+
+    }
+
+    update(){
+
+        if(this.height<this.maxHeight){
+
+            this.height+=this.growSpeed;
+
+        }else{
+
+            this.bloom=Math.min(
+                this.bloom+0.01,
+                1
+            );
+
+        }
+
+        this.leaves.forEach(l=>{
+
+            l.size=Math.min(
+                l.size+0.015,
+                1
+            );
+
+        });
+
+    }
+
+    drawStem(){
+
+        ctx.strokeStyle="#ff5ca8";
+        ctx.lineWidth=6;
+
+        ctx.beginPath();
+
+        ctx.moveTo(
+            this.x,
+            this.baseY
+        );
+
+        ctx.quadraticCurveTo(
+            this.x-15,
+            this.baseY-this.height/2,
+            this.x,
+            this.baseY-this.height
+        );
+
+        ctx.stroke();
+
+    }
+
+    drawLeaves(){
+
+        this.leaves.forEach((leaf,index)=>{
+
+            const y=
+            this.baseY-
+            leaf.y;
+
+            const side=
+            index%2===0 ? -1 : 1;
+
+            ctx.save();
+
+            ctx.translate(
+                this.x,
+                y
+            );
+
+            ctx.rotate(
+                side*0.7
+            );
+
+            ctx.scale(
+                leaf.size,
+                leaf.size
+            );
+
+            const grad=
+            ctx.createLinearGradient(
+                0,0,50,0
+            );
+
+            grad.addColorStop(
+                0,
+                "#ff8bc2"
+            );
+
+            grad.addColorStop(
+                1,
+                "#ff2e7e"
+            );
+
+            ctx.fillStyle=grad;
+
+            ctx.beginPath();
+
+            ctx.ellipse(
+                side*20,
+                0,
+                25,
+                12,
+                0,
+                0,
+                Math.PI*2
+            );
+
+            ctx.fill();
+
+            ctx.restore();
+
+        });
+
+    }
+
+    drawFlower(){
+
+        const topY=
+        this.baseY-
+        this.height;
+
+        ctx.save();
+
+        ctx.translate(
+            this.x,
+            topY
+        );
+
+        const size=
+        45*this.bloom;
+
+        for(let i=0;i<8;i++){
+
+            ctx.save();
+
+            ctx.rotate(
+                i*Math.PI/4
+            );
+
+            const petal=
+            ctx.createRadialGradient(
+                0,0,5,
+                0,0,size
+            );
+
+            petal.addColorStop(
+                0,
+                "#ffd4eb"
+            );
+
+            petal.addColorStop(
+                1,
+                "#ff007f"
+            );
+
+            ctx.fillStyle=
+            petal;
+
+            ctx.beginPath();
+
+            ctx.ellipse(
+                0,
+                -size,
+                size*0.45,
+                size,
+                0,
+                0,
+                Math.PI*2
+            );
+
+            ctx.fill();
+
+            ctx.restore();
+
+        }
+
+        ctx.fillStyle="#ffe066";
+
+        ctx.beginPath();
+        ctx.arc(
+            0,
+            0,
+            12*this.bloom,
+            0,
+            Math.PI*2
+        );
+        ctx.fill();
+
+        ctx.restore();
+
+    }
+
+    drawGlow(){
+
+        const topY=
+        this.baseY-
+        this.height;
+
+        const glow=
+        ctx.createRadialGradient(
+            this.x,
+            topY,
+            0,
+            this.x,
+            topY,
+            100
+        );
+
+        glow.addColorStop(
+            0,
+            "rgba(255,0,110,.25)"
+        );
+
+        glow.addColorStop(
+            1,
+            "rgba(255,0,110,0)"
+        );
+
+        ctx.fillStyle=
+        glow;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            this.x,
+            topY,
+            100,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+    }
+
+    draw(){
+
+        this.drawGlow();
+        this.drawStem();
+        this.drawLeaves();
+        this.drawFlower();
+
+    }
+}
+
+function drawBucket(){
+
+    const x=w/2;
+    const y=h-110;
+
+    ctx.fillStyle=
+    "rgba(0,0,0,.3)";
+
+    ctx.beginPath();
+    ctx.ellipse(
+        x,
+        y+100,
+        150,
+        35,
+        0,
+        0,
+        Math.PI*2
+    );
+    ctx.fill();
+
+    const grad=
+    ctx.createLinearGradient(
+        x-120,
+        y,
+        x+120,
+        y
+    );
+
+    grad.addColorStop(
+        0,
+        "#c85b8f"
+    );
+
+    grad.addColorStop(
+        0.5,
+        "#ff9ec9"
+    );
+
+    grad.addColorStop(
+        1,
+        "#c85b8f"
+    );
+
+    ctx.fillStyle=
+    grad;
+
+    ctx.beginPath();
+    ctx.moveTo(x-90,y);
+    ctx.lineTo(x-65,y+120);
+    ctx.lineTo(x+65,y+120);
+    ctx.lineTo(x+90,y);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle=
+    "#ffd0e7";
+
+    ctx.fillRect(
+        x-100,
+        y-15,
+        200,
+        25
+    );
+
+}
+
+const flowers=[];
+
+function createFlowers(){
+
+    flowers.length=0;
+
+    const center=w/2;
+
+    const positions=[
+        center-140,
+        center-70,
+        center,
+        center+70,
+        center+140
+    ];
+
+    positions.forEach(pos=>{
+
+        flowers.push(
+            new Flower(pos)
+        );
+
+    });
+
+}
+
+createFlowers();
+
+function animate(){
+
+    const bg=
+    ctx.createLinearGradient(
+        0,0,0,h
+    );
+
+    bg.addColorStop(
+        0,
+        "#06081a"
+    );
+
+    bg.addColorStop(
+        0.4,
+        "#1a0830"
+    );
+
+    bg.addColorStop(
+        0.7,
+        "#351033"
+    );
+
+    bg.addColorStop(
+        1,
+        "#15070f"
+    );
+
+    ctx.fillStyle=bg;
+    ctx.fillRect(0,0,w,h);
+
+    stars.forEach(s=>{
+
+        ctx.fillStyle=
+        "rgba(255,255,255,.7)";
+
+        ctx.beginPath();
+        ctx.arc(
+            s.x,
+            s.y,
+            s.r,
+            0,
+            Math.PI*2
+        );
+        ctx.fill();
+
+    });
+
+    const moon=
+    ctx.createRadialGradient(
+        w*0.8,
+        h*0.2,
+        0,
+        w*0.8,
+        h*0.2,
+        220
+    );
+
+    moon.addColorStop(
+        0,
+        "rgba(255,255,255,.25)"
+    );
+
+    moon.addColorStop(
+        1,
+        "rgba(255,255,255,0)"
+    );
+
+    ctx.fillStyle=moon;
+
+    ctx.beginPath();
+    ctx.arc(
+        w*0.8,
+        h*0.2,
+        220,
+        0,
+        Math.PI*2
+    );
+    ctx.fill();
+
+    fireflies.forEach(f=>{
+
+        f.y-=f.speed;
+
+        if(f.y<0){
+            f.y=h;
+        }
+
+        const alpha=
+        0.5+
+        Math.sin(
+            Date.now()*0.003+
+            f.phase
+        )*0.4;
+
+        ctx.fillStyle=
+        `rgba(255,220,100,${alpha})`;
+
+        ctx.beginPath();
+        ctx.arc(
+            f.x,
+            f.y,
+            f.r,
+            0,
+            Math.PI*2
+        );
+        ctx.fill();
+
+    });
+
+    flowers.forEach(f=>{
+
+        f.update();
+        f.draw();
+
+    });
+
+    drawBucket();
+
+    requestAnimationFrame(
+        animate
+    );
+}
+
+animate();
+
+</script>
+
+</body>
+</html>
