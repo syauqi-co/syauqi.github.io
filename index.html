@@ -331,10 +331,11 @@ function drawBouquetBase(){
 
     ctx.fillStyle = wrap;
     ctx.beginPath();
-    ctx.moveTo(x - 105, y + 10);
-    ctx.lineTo(x - 68, y + 145);
-    ctx.lineTo(x + 68, y + 145);
-    ctx.lineTo(x + 105, y + 10);
+    ctx.beginPath();
+    ctx.moveTo(x - 160, y - 40);
+    ctx.lineTo(x - 90, y + 190);
+    ctx.lineTo(x + 90, y + 190);
+    ctx.lineTo(x + 160, y - 40);
     ctx.closePath();
     ctx.fill();
 
@@ -349,13 +350,20 @@ function drawBouquetBase(){
 
     ctx.fillStyle = ribbon;
     ctx.beginPath();
-    ctx.ellipse(x, y + 95, 38, 19, 0, 0, Math.PI * 2);
+    ctx.ellipse(x, y + 85, 55, 25, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.beginPath();
-    ctx.moveTo(x, y + 95);
-    ctx.lineTo(x - 13, y + 124);
-    ctx.lineTo(x + 13, y + 124);
+    ctx.moveTo(x-25,y+95);
+    ctx.lineTo(x-50,y+155);
+    ctx.lineTo(x-10,y+120);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(x+25,y+95);
+    ctx.lineTo(x+50,y+155);
+    ctx.lineTo(x+10,y+120);
     ctx.closePath();
     ctx.fill();
 }
@@ -367,11 +375,17 @@ function animate(time){
     drawFireflies(time);
 
     flowers.forEach(f => {
-        f.update();
-        f.draw();
+    f.update();
+    f.drawStem();
+    f.drawLeaves();
     });
 
     drawBouquetBase();
+
+    flowers.forEach(f => {
+        f.drawGlow();
+        f.drawFlowerHead();
+    });
 
     requestAnimationFrame(animate);
 }
