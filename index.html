@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Red Bouquet</title>
+<title>Red Bloom Flowers</title>
 <style>
 html,body{
     margin:0;
@@ -50,22 +50,27 @@ const fireflies = [];
 const flowers = [];
 
 class Flower {
-    constructor(x, scale = 1, offsetY = 0){
+    constructor(x, scale = 1){
         this.x = x;
-        this.baseY = h - 135 + offsetY;
+        this.baseY = h - 20;
         this.scale = scale;
-        this.height = 0;
-        this.maxHeight = 180 + Math.random() * 95;
-        this.growSpeed = 0.8 + Math.random() * 1.05;
-        this.bloom = 0;
-        this.leafGrow = 0;
 
+        this.height = 0;
+        this.maxHeight = rand(h * 0.22, h * 0.42);
+        this.growSpeed = rand(0.8, 1.35);
+
+        this.bloom = 0;
+        this.stemWave = rand(0.8, 1.8);
+        this.stemPhase = rand(0, Math.PI * 2);
+
+        this.leafProgress = 0;
         this.leaves = [];
-        for(let i = 0; i < 6; i++){
+        for(let i = 0; i < 7; i++){
             this.leaves.push({
-                y: 32 + i * 22,
+                y: 35 + i * 24,
                 side: i % 2 === 0 ? -1 : 1,
-                size: 0
+                size: 0,
+                angle: rand(-0.15, 0.15)
             });
         }
     }
@@ -73,34 +78,41 @@ class Flower {
     update(){
         if(this.height < this.maxHeight){
             this.height += this.growSpeed;
-        }else{
-            this.bloom = Math.min(this.bloom + 0.013, 1);
+        } else {
+            this.bloom = Math.min(this.bloom + 0.012, 1);
         }
 
-        this.leafGrow = Math.min(this.leafGrow + 0.02, 1);
+        this.leafProgress = Math.min(this.leafProgress + 0.02, 1);
 
-        this.leaves.forEach(l => {
-            l.size = Math.min(l.size + 0.022, 1);
+        this.leaves.forEach(leaf => {
+            leaf.size = Math.min(leaf.size + 0.02, 1);
         });
     }
 
+    getTopY(){
+        return this.baseY - this.height;
+    }
+
     drawStem(){
-        const stemGrad = ctx.createLinearGradient(this.x, this.baseY, this.x, this.baseY - this.height);
-        stemGrad.addColorStop(0, "#2f8f4e");
-        stemGrad.addColorStop(0.5, "#45b764");
-        stemGrad.addColorStop(1, "#1f6a35");
+        const topY = this.getTopY();
+        const sway = Math.sin(performance.now() * 0.001 + this.stemPhase) * this.stemWave * 8;
+
+        const stemGrad = ctx.createLinearGradient(this.x, this.baseY, this.x + sway, topY);
+        stemGrad.addColorStop(0, "#2a7a43");
+        stemGrad.addColorStop(0.5, "#3cb25f");
+        stemGrad.addColorStop(1, "#16512a");
 
         ctx.strokeStyle = stemGrad;
-        ctx.lineWidth = 7 * this.scale;
+        ctx.lineWidth = 6 * this.scale;
         ctx.lineCap = "round";
 
         ctx.beginPath();
         ctx.moveTo(this.x, this.baseY);
         ctx.quadraticCurveTo(
-            this.x - 18 * this.scale,
+            this.x + sway * 0.45,
             this.baseY - this.height * 0.45,
-            this.x,
-            this.baseY - this.height
+            this.x + sway,
+            topY
         );
         ctx.stroke();
     }
@@ -109,16 +121,17 @@ class Flower {
         this.leaves.forEach((leaf) => {
             const y = this.baseY - leaf.y;
             const side = leaf.side;
+            const sway = Math.sin(performance.now() * 0.001 + this.stemPhase) * this.stemWave * 5;
 
             ctx.save();
-            ctx.translate(this.x, y);
-            ctx.rotate(side * 0.7);
+            ctx.translate(this.x + sway * (leaf.y / this.maxHeight) * 0.4, y);
+            ctx.rotate(side * 0.72 + leaf.angle);
             ctx.scale(leaf.size * this.scale, leaf.size * this.scale);
 
-            const grad = ctx.createLinearGradient(0, 0, 50, 0);
-            grad.addColorStop(0, "#7ee08d");
-            grad.addColorStop(0.6, "#2f9d47");
-            grad.addColorStop(1, "#1d5f2c");
+            const grad = ctx.createLinearGradient(0, 0, 60, 0);
+            grad.addColorStop(0, "#95e6a1");
+            grad.addColorStop(0.6, "#38a64d");
+            grad.addColorStop(1, "#1c5e2f");
 
             ctx.fillStyle = grad;
             ctx.beginPath();
@@ -130,35 +143,35 @@ class Flower {
     }
 
     drawFlowerHead(){
-        const topY = this.baseY - this.height;
+        const topY = this.getTopY();
 
         ctx.save();
         ctx.translate(this.x, topY);
         ctx.scale(this.bloom * this.scale, this.bloom * this.scale);
 
-        const petalCount = 8;
-        const petalSize = 42;
+        const petalCount = 9;
+        const petalSize = 44;
 
         for(let i = 0; i < petalCount; i++){
             ctx.save();
             ctx.rotate((Math.PI * 2 / petalCount) * i);
 
-            const petalGrad = ctx.createRadialGradient(0, 0, 5, 0, -petalSize, petalSize);
+            const petalGrad = ctx.createRadialGradient(0, 0, 4, 0, -petalSize, petalSize);
             petalGrad.addColorStop(0, "#ffe1e7");
-            petalGrad.addColorStop(0.45, "#ff5d78");
-            petalGrad.addColorStop(1, "#9f0029");
+            petalGrad.addColorStop(0.4, "#ff5b73");
+            petalGrad.addColorStop(1, "#980021");
 
             ctx.fillStyle = petalGrad;
             ctx.beginPath();
-            ctx.ellipse(0, -petalSize, 18, 42, 0, 0, Math.PI * 2);
+            ctx.ellipse(0, -petalSize, 18, 44, 0, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.restore();
         }
 
         const centerGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, 18);
-        centerGrad.addColorStop(0, "#fff2a6");
-        centerGrad.addColorStop(1, "#e6b800");
+        centerGrad.addColorStop(0, "#fff6b3");
+        centerGrad.addColorStop(1, "#e2b400");
 
         ctx.fillStyle = centerGrad;
         ctx.beginPath();
@@ -169,8 +182,7 @@ class Flower {
     }
 
     drawGlow(){
-        const topY = this.baseY - this.height;
-
+        const topY = this.getTopY();
         const glow = ctx.createRadialGradient(this.x, topY, 0, this.x, topY, 110);
         glow.addColorStop(0, "rgba(255,70,110,.22)");
         glow.addColorStop(1, "rgba(255,70,110,0)");
@@ -198,9 +210,9 @@ function initScene(){
         stars.push({
             x: Math.random() * w,
             y: Math.random() * h,
-            r: rand(0.6, 1.8),
-            baseA: rand(0.18, 0.8),
-            speed: rand(0.002, 0.008),
+            r: rand(0.5, 1.7),
+            baseA: rand(0.12, 0.7),
+            speed: rand(0.0015, 0.006),
             phase: rand(0, Math.PI * 2)
         });
     }
@@ -216,27 +228,18 @@ function initScene(){
         });
     }
 
+    const count = 11;
     const center = w / 2;
+    const span = 420;
 
-    const positions = [
-        center - 210,
-        center - 165,
-        center - 120,
-        center - 78,
-        center - 35,
-        center + 5,
-        center + 45,
-        center + 90,
-        center + 135,
-        center + 180
-    ];
+    for(let i = 0; i < count; i++){
+        const t = count === 1 ? 0.5 : i / (count - 1);
+        const x = center - span / 2 + t * span;
+        const scale = 0.82 + Math.random() * 0.28;
+        flowers.push(new Flower(x, scale));
+    }
 
-    const scales = [0.88, 0.95, 0.92, 1.0, 1.05, 1.0, 0.98, 1.03, 0.94, 0.9];
-    const offsets = [0, -10, 5, -12, 8, -6, 10, -4, 6, -8];
-
-    positions.forEach((x, index) => {
-        flowers.push(new Flower(x, scales[index], offsets[index]));
-    });
+    flowers.sort((a, b) => a.x - b.x);
 }
 
 function drawBackground(){
@@ -249,13 +252,13 @@ function drawBackground(){
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
 
-    const moon = ctx.createRadialGradient(w * 0.8, h * 0.18, 0, w * 0.8, h * 0.18, 220);
+    const moon = ctx.createRadialGradient(w * 0.82, h * 0.18, 0, w * 0.82, h * 0.18, 220);
     moon.addColorStop(0, "rgba(255,245,255,.28)");
     moon.addColorStop(1, "rgba(255,245,255,0)");
 
     ctx.fillStyle = moon;
     ctx.beginPath();
-    ctx.arc(w * 0.8, h * 0.18, 220, 0, Math.PI * 2);
+    ctx.arc(w * 0.82, h * 0.18, 220, 0, Math.PI * 2);
     ctx.fill();
 
     const mist = ctx.createRadialGradient(w * 0.5, h * 0.98, 30, w * 0.5, h * 0.98, 560);
@@ -268,7 +271,7 @@ function drawBackground(){
 }
 
 function drawGroundGlow(){
-    const g = ctx.createRadialGradient(w / 2, h, 40, w / 2, h, 400);
+    const g = ctx.createRadialGradient(w / 2, h, 40, w / 2, h, 420);
     g.addColorStop(0, "rgba(255,80,130,.2)");
     g.addColorStop(0.5, "rgba(255,80,130,.08)");
     g.addColorStop(1, "rgba(255,80,130,0)");
@@ -279,7 +282,7 @@ function drawGroundGlow(){
 
 function drawStars(time){
     for(const s of stars){
-        const twinkle = 0.78 + Math.sin(time * s.speed + s.phase) * 0.22;
+        const twinkle = 0.8 + Math.sin(time * s.speed + s.phase) * 0.2;
         const alpha = Math.max(0.05, s.baseA * twinkle);
 
         ctx.fillStyle = `rgba(255,255,255,${alpha})`;
@@ -302,70 +305,13 @@ function drawFireflies(time){
         if(f.x < -10) f.x = w + 10;
         if(f.x > w + 10) f.x = -10;
 
-        const a = 0.35 + Math.sin(time * 0.0022 + f.phase) * 0.22;
+        const a = 0.34 + Math.sin(time * 0.0022 + f.phase) * 0.2;
 
         ctx.fillStyle = `rgba(255,230,120,${a})`;
         ctx.beginPath();
         ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
         ctx.fill();
     }
-}
-
-function drawBouquetBase(){
-    const x = w / 2;
-    const y = h - 120;
-
-    const shadow = ctx.createRadialGradient(x, y + 120, 10, x, y + 120, 170);
-    shadow.addColorStop(0, "rgba(0,0,0,.35)");
-    shadow.addColorStop(1, "rgba(0,0,0,0)");
-
-    ctx.fillStyle = shadow;
-    ctx.beginPath();
-    ctx.ellipse(x, y + 118, 175, 35, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    const wrap = ctx.createLinearGradient(x - 120, y, x + 120, y + 140);
-    wrap.addColorStop(0, "#ffd7e6");
-    wrap.addColorStop(0.45, "#fff7fa");
-    wrap.addColorStop(1, "#f39ab8");
-
-    ctx.fillStyle = wrap;
-    ctx.beginPath();
-    ctx.beginPath();
-    ctx.moveTo(x - 160, y - 40);
-    ctx.lineTo(x - 90, y + 190);
-    ctx.lineTo(x + 90, y + 190);
-    ctx.lineTo(x + 160, y - 40);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.strokeStyle = "#ffadc7";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    const ribbon = ctx.createLinearGradient(x - 90, y + 90, x + 90, y + 90);
-    ribbon.addColorStop(0, "#ff4f7d");
-    ribbon.addColorStop(0.5, "#ff91b1");
-    ribbon.addColorStop(1, "#d53c66");
-
-    ctx.fillStyle = ribbon;
-    ctx.beginPath();
-    ctx.ellipse(x, y + 85, 55, 25, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(x-25,y+95);
-    ctx.lineTo(x-50,y+155);
-    ctx.lineTo(x-10,y+120);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(x+25,y+95);
-    ctx.lineTo(x+50,y+155);
-    ctx.lineTo(x+10,y+120);
-    ctx.closePath();
-    ctx.fill();
 }
 
 function animate(time){
@@ -375,16 +321,8 @@ function animate(time){
     drawFireflies(time);
 
     flowers.forEach(f => {
-    f.update();
-    f.drawStem();
-    f.drawLeaves();
-    });
-
-    drawBouquetBase();
-
-    flowers.forEach(f => {
-        f.drawGlow();
-        f.drawFlowerHead();
+        f.update();
+        f.draw();
     });
 
     requestAnimationFrame(animate);
